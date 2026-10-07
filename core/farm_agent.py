@@ -61,7 +61,7 @@ class FarmAgentCoordinator:
         # -------------------------------------------------------------
         # 2. DEBATE STAGE: Clash Identification & Evidence Adjudication
         # -------------------------------------------------------------
-        debate_outcome = self.debate_engine.adjudicate(ctx, agent_opinions)
+        debate_outcome = self.debate_engine.adjudicate(ctx, agent_opinions, weather_data=weather_info)
 
         # -------------------------------------------------------------
         # 3. DEFEND STAGE: Rationale Formulation & Defense Construction

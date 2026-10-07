@@ -6,7 +6,7 @@ evaluates competing theories, applies safety weighting, selects the winning reco
 and generates structured defenses explaining why alternatives were rejected.
 """
 
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional
 from utils.helpers import (
     FarmContext,
     AgentResponse,
@@ -20,7 +20,12 @@ class DebateEngine:
     def __init__(self):
         self.llm_client = GroqLLMClient()
 
-    def adjudicate(self, ctx: FarmContext, agents: Dict[str, AgentResponse]) -> DebateOutcome:
+    def adjudicate(
+        self,
+        ctx: FarmContext,
+        agents: Dict[str, AgentResponse],
+        weather_data: Optional[Dict[str, Any]] = None,
+    ) -> DebateOutcome:
         crop_agent = agents.get("Crop Agent")
         irr_agent = agents.get("Irrigation Agent")
         weather_agent = agents.get("Weather Agent")
@@ -37,23 +42,26 @@ class DebateEngine:
         # -------------------------------------------------------------
         
         # Clash 1: Irrigation vs Weather (Impending Heavy Precipitation)
-        weather_rain_forecast = 0.0
-        if weather_agent:
-            for ev in weather_agent.supporting_evidence:
-                if "precipitation" in ev.lower() or "mm" in ev.lower():
-                    if "45.0mm" in ev or "heavy" in ev.lower():
-                        weather_rain_forecast = 45.0
+        forecast = (weather_data or {}).get("forecast_next_24h", {})
+        try:
+            weather_rain_forecast = max(0.0, float(forecast.get("expected_rain_mm", 0.0) or 0.0))
+            rain_probability = min(100.0, max(0.0, float(forecast.get("rain_probability", 0.0) or 0.0)))
+        except (TypeError, ValueError):
+            weather_rain_forecast, rain_probability = 0.0, 0.0
+        # A substantial forecast is actionable only when supported by meaningful
+        # probability; this keeps uncertain, trace rainfall from overriding dry soil.
+        heavy_rain_expected = weather_rain_forecast >= 25.0 and rain_probability >= 60.0
 
         if irr_agent and weather_agent:
             irr_rec = irr_agent.recommendation.lower()
-            if ("irrigate" in irr_rec or "hydraulically" in irr_rec) and (weather_rain_forecast >= 25.0 or "heavy_rain_incoming" in ctx.weather_preset):
+            if ("irrigate" in irr_rec or "hydraulically" in irr_rec) and heavy_rain_expected:
                 disagreements.append(Disagreement(
                     dimension="Water Delivery vs Storm Precaution",
                     agent_a="Irrigation Agent",
                     position_a=irr_agent.recommendation,
                     agent_b="Weather Agent",
                     position_b=weather_agent.recommendation,
-                    core_conflict="Irrigation Agent notes low soil moisture and advocates watering, but Weather Agent forecasts a 45mm heavy downpour within hours."
+                    core_conflict=f"Irrigation is indicated by low moisture, while the forecast reports {weather_rain_forecast:g} mm of rain at {rain_probability:g}% probability in the next 24 hours."
                 ))
 
         # Clash 2: Symptom Diagnosis (Water Deficit vs Root Disease/Anoxia)
@@ -98,20 +106,20 @@ class DebateEngine:
         symptoms_lower = ctx.symptoms.lower()
 
         # CASE A: Excessive moisture + Root Rot / Suffocation (Scenario 5)
-        if (moisture is not None and moisture >= 45.0) or ("stagnant" in symptoms_lower and "wilt" in symptoms_lower):
+        if (moisture is not None and moisture >= 45.0) or ("stagnant" in symptoms_lower and ("wilt" in symptoms_lower or "droop" in symptoms_lower)):
             consensus_level = "High Consensus (Emergency Precaution)"
-            winning_recommendation = "Immediately HALT all irrigation, clear field drainage channels, and inspect root crowns for Pythium/Phytophthora root rot."
+            winning_recommendation = "HALT irrigation for now, check drainage, and inspect root crowns for waterlogging or rot before choosing treatment."
             reasons_for_decision = [
-                f"Soil moisture is critical at {moisture or 'saturated'}%, proving that wilting is NOT caused by drought.",
-                "Roots are suffocating from anoxia (lack of oxygen); waterlogged soil invites destructive fungal rot.",
-                "Applying even light irrigation under these conditions guarantees root death.",
+                (f"Reported soil moisture is high at {moisture:g}%, which makes additional irrigation a poor-risk choice." if moisture is not None else "Stagnant soil and wilting are consistent with poor root-zone aeration; confirm by checking drainage and roots."),
+                "Saturated soil can limit oxygen around roots and favor root disease; inspect roots before assuming a specific pathogen.",
+                "More irrigation could worsen oxygen stress and prolong root-zone saturation.",
                 "Aeration and root zone drainage must take absolute precedence."
             ]
             rejected_alternatives.append(RejectedAlternative(
                 alternative="Immediate irrigation to relieve wilting leaves",
                 advocated_by="Intuitive reaction to plant drooping",
-                rejection_reason="Wilting in waterlogged soil is symptomatic of root system collapse, not thirst.",
-                evidence_against=f"Soil moisture is {moisture}%, far above field capacity."
+                rejection_reason="Wilting with a high moisture reading can reflect impaired roots, so adding water could worsen the problem.",
+                evidence_against=(f"Reported soil moisture is {moisture:g}%, above the profile's preferred range." if moisture is not None else "Stagnant soil and wilting suggest the root zone may already be saturated.")
             ))
             rejected_alternatives.append(RejectedAlternative(
                 alternative="Immediate chemical fertilizer feeding",
@@ -123,31 +131,31 @@ class DebateEngine:
             residual_risks.append("Irreversible root loss may have already occurred; yield reduction likely if rot has entered taproot.")
 
         # CASE B: Wilting plant + Torrential rain incoming (Scenario 2)
-        elif weather_rain_forecast >= 25.0 or ("heavy_rain_incoming" in ctx.weather_preset):
+        elif heavy_rain_expected:
             consensus_level = "Sharp Conflict (Resolved in Favor of Meteorological Safety)"
-            winning_recommendation = "DELAY all planned irrigation and prepare field drainage; allow incoming natural rainfall (~45mm) to rehydrate the crop."
+            winning_recommendation = f"DELAY scheduled irrigation for now and prepare field drainage; reassess soil moisture after the forecast rain ({weather_rain_forecast:g}mm at {rain_probability:g}% probability)."
             reasons_for_decision = [
-                f"Weather forecast predicts heavy rainfall ({weather_rain_forecast or '45.0'}mm) within the next 12-24 hours.",
+                f"Weather forecast reports {weather_rain_forecast:g}mm of rain at {rain_probability:g}% probability within 24 hours.",
                 "Irrigating immediately prior to a major downpour creates severe soil waterlogging and nutrient leaching.",
-                "Temporary midday leaf droop is manageable for 12 hours without permanent physiological damage.",
+                "A short delay is reversible; recheck moisture and plant condition if rain does not arrive.",
                 "Conserves irrigation water and avoids the high risk of root rot."
             ]
             rejected_alternatives.append(RejectedAlternative(
                 alternative="Run standard drip irrigation cycle now",
                 advocated_by="Irrigation Agent (initial baseline)",
-                rejection_reason="Impending 45mm storm will provide more than enough precipitation.",
-                evidence_against="Weather Agent forecast projects 90% rain probability and heavy accumulation."
+                rejection_reason="A substantial, reasonably likely rain event could make scheduled irrigation unnecessary and raise saturation risk.",
+                evidence_against=f"Forecast: {weather_rain_forecast:g}mm expected at {rain_probability:g}% probability within 24 hours."
             ))
             confidence = "High"
             residual_risks.append("If storm track shifts away unexpectedly, soil moisture should be remeasured tomorrow morning.")
 
         # CASE C: Severe drought + Heatwave (Scenario 1)
-        elif (moisture is not None and moisture < 20.0) or ("dry_heatwave" in ctx.weather_preset):
+        elif moisture is not None and moisture < 20.0:
             consensus_level = "High Consensus (Immediate Rehydration)"
             winning_recommendation = "IRRIGATE PROMPTLY: Apply deep, targeted root-zone irrigation during cooler early morning or late evening hours."
             reasons_for_decision = [
-                f"Soil moisture is critically depleted at {moisture or 'low'}%, below the permanent wilting threshold.",
-                "Weather outlook indicates high heat and zero precipitation in the near forecast.",
+                f"Reported soil moisture is low at {moisture:g}%, below the soil profile's preferred range.",
+                f"Weather outlook reports {weather_rain_forecast:g}mm expected rain in 24 hours; irrigation should be reassessed if the forecast changes.",
                 "Crop is in an active sensitive stage, and severe drought stress will abort flowers/fruits.",
                 "Scheduling irrigation in cooler hours avoids heat shock and droplet evaporation."
             ]
@@ -167,14 +175,14 @@ class DebateEngine:
             residual_risks.append("Ensure water reaches root depth (~20-30cm) rather than just wetting the top crust.")
 
         # CASE D: Yellow leaves / Nutrient deficiency (Scenario 3)
-        elif "yellow" in symptoms_lower or "deficiency" in symptoms_lower or "corn" in ctx.crop.lower():
+        elif "yellow" in symptoms_lower or "chlorosis" in symptoms_lower or "deficiency" in symptoms_lower:
             consensus_level = "Moderate Debate (Nutrient vs Overwatering & Safety Bounds)"
-            winning_recommendation = "Address probable Nitrogen deficiency: Apply a measured side-dress of balanced nitrogen fertilizer or foliar spray, preceded by rapid soil EC/pH test."
+            winning_recommendation = "CHECK BEFORE TREATING: Yellowing may indicate nutrient or root stress; inspect the pattern and verify soil pH/N before applying fertilizer."
             reasons_for_decision = [
-                "Symptoms match classical Nitrogen mobility: older lower leaves yellowing along the midrib.",
-                "Prior rains or irrigation likely leached mobile nitrates below the shallow root zone.",
-                "Soil moisture is currently stable, allowing roots to actively uptake dissolved nutrients.",
-                "Precautionary testing prevents over-fertilization and toxic nitrate runoff."
+                "Yellowing is nonspecific; older lower leaves with V-shaped patterns can be consistent with nitrogen deficiency.",
+                "Rainfall can contribute to nitrate loss, but the reported amount alone cannot confirm leaching.",
+                "Check drainage and root health alongside the leaf pattern before attributing symptoms to nutrients.",
+                "Soil or tissue testing before fertilizer reduces risk of excess application and runoff."
             ]
             rejected_alternatives.append(RejectedAlternative(
                 alternative="Heavy broad-spectrum synthetic fertilizer application without testing",
