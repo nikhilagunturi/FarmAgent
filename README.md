@@ -135,6 +135,8 @@ Then open your web browser to:
 - Expand **More details (optional)** only when you already know those details.
 - Read the plain-language recommendation first; expand **Agent debate** for simplified agent views.
 
+Live Demo:- https://github.com/nikhilagunturi/FarmAgent
+
 ---
 
 ## 🛡️ Agricultural Safety Notice
