@@ -1,0 +1,15 @@
+# Secrets and local environment files
+.env
+.env.*
+!.env.example
+
+# Python environments and generated files
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.log
+instance/
+
+# Local backup copies
+*_backup.*

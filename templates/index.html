@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Tell FarmAgent what you see on your crop and get clear next steps.">
+  <meta name="theme-color" content="#f5f7f4">
+  <title>FarmAgent — Crop Health Guidance</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/" aria-label="FarmAgent home">
+      <span class="brand-mark" aria-hidden="true">FA</span>
+      <span class="brand-name">FarmAgent</span>
+    </a>
+    <nav class="main-nav" aria-label="Main navigation"><a href="#how-it-works">How it works</a><a href="#assessment">Crop assessment</a></nav>
+    <div class="topbar-tools">
+      <span class="engine-state"><span class="state-dot"></span><span id="engine-status-text">FarmAgent ready</span></span>
+      <label class="language-picker" for="language-select"><span data-i18n="language">Language</span>
+        <select id="language-select" aria-label="Choose language">
+          <option value="en">English</option>
+          <option value="hi">हिन्दी</option>
+          <option value="te">తెలుగు</option>
+          <option value="ta">தமிழ்</option>
+          <option value="ml">മലയാളം</option>
+          <option value="kn">ಕನ್ನಡ</option>
+          <option value="mr">मराठी</option>
+        </select>
+      </label>
+    </div>
+  </header>
+
+  <main class="page-wrap">
+    <section class="dashboard-heading">
+      <p class="eyebrow">AUTOAGENT 3D <span>•</span> FIELD DECISION SUPPORT</p>
+      <h1>Farm intelligence, grounded in your field.</h1>
+      <p>Bring crop, soil, water and weather observations together to review a considered next step.</p>
+    </section>
+    <section class="demo-panel" id="examples" aria-labelledby="demo-title">
+      <div class="section-heading demo-heading">
+        <div><p class="step-kicker" data-i18n="demoKicker">TRY FARMAGENT</p><h2 id="demo-title" data-i18n="demoTitle">See how it works</h2></div>
+        <p data-i18n="demoHelp">Choose a sample problem to run a demo.</p>
+      </div>
+      <div class="demo-list" id="scenario-buttons-container">
+        <button class="demo-chip" type="button" data-scenario="0"><span class="scenario-number">01</span><span class="scenario-copy"><strong>Wilting + low moisture</strong><small>Consensus · watering</small></span></button>
+        <button class="demo-chip" type="button" data-scenario="1"><span class="scenario-number">02</span><span class="scenario-copy"><strong>Wilting + rain incoming</strong><small>Debate · rainfall risk</small></span></button>
+        <button class="demo-chip" type="button" data-scenario="2"><span class="scenario-number">03</span><span class="scenario-copy"><strong>Yellow leaves on corn</strong><small>Debate · nutrient signals</small></span></button>
+        <button class="demo-chip" type="button" data-scenario="3"><span class="scenario-number">04</span><span class="scenario-copy"><strong>Foliar disease spots</strong><small>Assessment · diagnostic uncertainty</small></span></button><button class="demo-chip" type="button" data-scenario="4"><span class="scenario-number">05</span><span class="scenario-copy"><strong>Saturated soil + root rot</strong><small>Urgent · irrigation halt</small></span></button>
+      </div>
+      <p class="demo-note" data-i18n="demoNote">Demo examples use sample weather, not live farm measurements.</p>
+    </section>
+
+    <section class="form-card" id="assessment" aria-labelledby="intake-title">
+      <div class="form-intro">
+        <div><p class="step-kicker" data-i18n="intakeKicker">YOUR CROP</p><h2 id="intake-title" data-i18n="intakeTitle">Tell us what you see</h2></div>
+        <p data-i18n="optionalNote">You can skip anything you are not sure about.</p>
+      </div>
+      <form id="farm-form">
+        <fieldset class="question-block">
+          <legend><span class="question-number">1</span><span data-i18n="cropQuestion">What are you growing?</span></legend>
+          <div class="choice-grid crop-grid" id="crop-choices">
+            <button class="choice-card crop-choice" type="button" data-value="tomato"><span data-i18n="cropTomato">Tomato</span></button>
+            <button class="choice-card crop-choice" type="button" data-value="rice"><span data-i18n="cropRice">Rice</span></button>
+            <button class="choice-card crop-choice" type="button" data-value="maize"><span>🌽</span><span data-i18n="cropMaize">Maize</span></button>
+            <button class="choice-card crop-choice" type="button" data-value="potato"><span>🥔</span><span data-i18n="cropPotato">Potato</span></button>
+            <button class="choice-card crop-choice" type="button" data-value="chilli"><span>🌶️</span><span data-i18n="cropChilli">Chilli</span></button>
+            <button class="choice-card crop-choice" type="button" data-value="groundnut"><span>🥜</span><span data-i18n="cropGroundnut">Groundnut</span></button>
+            <button class="choice-card crop-choice" type="button" data-value="other"><span>🥭</span><span data-i18n="cropOther">Other</span></button>
+          </div>
+          <div class="custom-crop-wrap" id="custom-crop-wrap" hidden>
+            <label for="custom-crop" data-i18n="typeCrop">Type your crop</label>
+            <input id="custom-crop" type="text" autocomplete="off" data-i18n-placeholder="cropPlaceholder" placeholder="For example, onion">
+          </div>
+        </fieldset>
+
+        <fieldset class="question-block">
+          <legend><span class="question-number">2</span><span data-i18n="problemQuestion">What is the problem?</span></legend>
+          <div class="choice-grid problem-grid" id="problem-choices">
+            <button class="choice-card problem-choice" type="button" data-value="thirsty"><span data-i18n="problemThirsty">Plant looks thirsty</span></button>
+            <button class="choice-card problem-choice" type="button" data-value="yellow_leaves"><span data-i18n="problemYellow">Leaves are turning yellow</span></button>
+            <button class="choice-card problem-choice" type="button" data-value="curling_leaves"><span data-i18n="problemCurling">Leaves are curling</span></button>
+            <button class="choice-card problem-choice" type="button" data-value="insects"><span data-i18n="problemInsects">I see insects</span></button>
+            <button class="choice-card problem-choice" type="button" data-value="disease"><span data-i18n="problemDisease">Plant may have a disease</span></button>
+            <button class="choice-card problem-choice" type="button" data-value="poor_growth"><span data-i18n="problemGrowth">Plant is not growing well</span></button>
+            <button class="choice-card problem-choice" type="button" data-value="too_much_water"><span data-i18n="problemWet">Too much water</span></button>
+            <button class="choice-card problem-choice" type="button" data-value="heat_stress"><span data-i18n="problemHeat">Too much heat</span></button>
+            <button class="choice-card problem-choice" type="button" data-value="unknown"><span data-i18n="problemUnknown">I don't know</span></button>
+          </div>
+          <label class="field-label" for="own-words" data-i18n="describeLabel">Describe the problem in your own words</label>
+          <div class="voice-row">
+            <textarea id="own-words" rows="4" data-i18n-placeholder="describePlaceholder" placeholder="My tomato leaves are curling and the plants look weak."></textarea>
+            <button type="button" class="voice-button" id="voice-button" aria-label="Start voice input" aria-pressed="false"><span class="voice-mic" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="12" rx="3"></rect><path d="M5 11a7 7 0 0 0 14 0M12 18v3m-4 0h8"></path></svg></span><span class="voice-copy"><strong id="voice-title">Voice assistant</strong><small id="voice-status" aria-live="polite">Tap to describe the problem</small></span></button>
+          </div>
+        <p class="voice-note">Speech recognition is handled by your browser and may use its speech service.</p>
+        </fieldset>
+
+        <fieldset class="question-block photo-block">
+          <legend><span class="question-number">3</span><span data-i18n="photoQuestion">Take a photo (optional)</span><span class="optional-label" data-i18n="optional">OPTIONAL</span></legend>
+          <p data-i18n="photoHelp">A photo can help FarmAgent identify possible crop problems.</p>
+          <div class="photo-actions">
+            <label class="photo-button" for="plant-photo"><span data-i18n="takePhoto">Take a photo of the plant</span><input id="plant-photo" type="file" accept="image/*" capture="environment" hidden></label>
+            <label class="photo-button secondary-photo" for="plant-photo-upload"><span data-i18n="uploadPhoto">Upload a photo</span><input id="plant-photo-upload" type="file" accept="image/*" hidden></label>
+          </div>
+          <p id="photo-name" class="photo-name" aria-live="polite"></p>
+          <p class="photo-note" data-i18n="photoNotAnalyzed">Photo analysis is not connected yet. Your photo will not be uploaded or analyzed.</p>
+        </fieldset>
+
+        <fieldset class="question-block">
+          <legend><span class="question-number">4</span><span data-i18n="soilQuestion">How does the soil look or feel?</span></legend>
+          <div class="choice-grid soil-grid" id="soil-choices">
+            <button class="choice-card soil-choice" type="button" data-value="very_dry"><span data-i18n="soilVeryDry">Very dry</span></button>
+            <button class="choice-card soil-choice" type="button" data-value="slightly_dry"><span data-i18n="soilSlightlyDry">Slightly dry</span></button>
+            <button class="choice-card soil-choice" type="button" data-value="normal"><span data-i18n="soilNormal">Normal</span></button>
+            <button class="choice-card soil-choice" type="button" data-value="wet"><span data-i18n="soilWet">Wet</span></button>
+            <button class="choice-card soil-choice" type="button" data-value="very_wet"><span data-i18n="soilVeryWet">Very wet</span></button>
+            <button class="choice-card soil-choice" type="button" data-value="unknown"><span data-i18n="dontKnow">I don't know</span></button>
+          </div>
+          <p class="gentle-note" data-i18n="notSure">Not sure? That's okay.</p>
+        </fieldset>
+
+        <fieldset class="question-block">
+          <legend><span class="question-number">5</span><span data-i18n="waterQuestion">Has it rained recently?</span></legend>
+          <div class="choice-grid compact-grid" id="rain-choices">
+            <button class="choice-card rain-choice" type="button" data-value="yes"><span data-i18n="yes">Yes</span></button>
+            <button class="choice-card rain-choice" type="button" data-value="no"><span data-i18n="no">No</span></button>
+            <button class="choice-card rain-choice" type="button" data-value="unknown"><span data-i18n="dontKnow">I don't know</span></button>
+          </div>
+          <label class="field-label" for="last-watered" data-i18n="lastWatered">When did you last water the crop?</label>
+          <div class="choice-grid compact-grid" id="watered-choices">
+            <button class="choice-card watered-choice" type="button" data-value="today" data-i18n="today">Today</button>
+            <button class="choice-card watered-choice" type="button" data-value="yesterday" data-i18n="yesterday">Yesterday</button>
+            <button class="choice-card watered-choice" type="button" data-value="2–3 days ago" data-i18n="twoThreeDays">2–3 days ago</button>
+            <button class="choice-card watered-choice" type="button" data-value="more than 3 days ago" data-i18n="moreThreeDays">More than 3 days ago</button>
+            <button class="choice-card watered-choice" type="button" data-value="unknown" data-i18n="dontRemember">I don't remember</button>
+          </div>
+        
+        </fieldset>
+
+        <fieldset class="question-block">
+          <legend><span class="question-number">6</span><span data-i18n="locationQuestion">Where is your farm? (optional)</span></legend>
+          <div class="location-row">
+            <button type="button" class="location-button" id="use-location"><span data-i18n="useLocation">Use my location</span></button>
+            <span class="or-label" data-i18n="or">or</span>
+            <div class="location-input-wrap"><label class="sr-only" for="input-location" data-i18n="villageTown">Village / Town</label><input id="input-location" type="text" data-i18n-placeholder="villagePlaceholder" placeholder="Village / Town"></div>
+          </div>
+          <p class="gentle-note" id="location-status" aria-live="polite" data-i18n="locationOptional">Location is optional. We only use it to look for weather.</p>
+        </fieldset>
+
+        <details class="advanced-details">
+          <summary data-i18n="moreDetails">More details (optional)</summary>
+          <p data-i18n="advancedHelp">Only add details you already know. None of these are needed for an analysis.</p>
+          <div class="advanced-grid">
+            <label><span data-i18n="growthStage">Growth stage</span><input id="input-growth-stage" type="text" data-i18n-placeholder="growthPlaceholder" placeholder="For example, flowering"></label>
+            <label><span data-i18n="soilType">Soil type</span><select id="input-soil-type"><option value="">I don't know</option><option value="Loam">Loam</option><option value="Sandy Loam">Sandy Loam</option><option value="Clay">Clay</option><option value="Clay Loam">Clay Loam</option><option value="Silt">Silt</option></select></label>
+            <label><span data-i18n="soilMoisture">Soil moisture (%)</span><input id="input-soil-moisture" type="number" min="0" max="100" step="0.1" placeholder="If measured"></label>
+            <label><span data-i18n="rainfall">Recent rainfall (mm)</span><input id="input-recent-rainfall" type="number" min="0" step="0.1" placeholder="If measured"></label>
+            <label><span data-i18n="temperature">Temperature (°C)</span><input id="input-temperature" type="number" step="0.1" placeholder="If measured"></label>
+            <label><span data-i18n="otherInfo">Other information</span><textarea id="input-additional-info" rows="2"></textarea></label>
+            <label><span data-i18n="weatherDemo">Weather example (demo only)</span><select id="input-weather-preset"><option value="default">Usual weather demo</option><option value="heavy_rain_incoming">Heavy rain demo</option><option value="dry_heatwave">Hot, dry weather demo</option></select></label>
+          </div>
+          <p class="demo-note" data-i18n="advancedDemoWarning">Weather choices are sample scenarios, not live forecasts.</p>
+        </details>
+
+        <div class="submit-area">
+          <p data-i18n="privacyNote">You do not need to share exact measurements.</p>
+          <button type="submit" class="analyze-button" id="btn-analyze"><span id="analyze-label" data-i18n="analyze">ANALYZE MY CROP</span></button>
+        </div>
+      </form>
+    </section>
+
+    <section class="loading-card" id="loading-panel" hidden aria-live="polite">
+      <h2 data-i18n="working">FarmAgent is looking into this...</h2>
+      <ol class="progress-list" id="progress-list">
+        <li data-i18n="progressUnderstand">Understanding your problem...</li>
+        <li data-i18n="progressCrop">Checking crop health...</li>
+        <li data-i18n="progressWater">Checking water needs...</li>
+        <li data-i18n="progressWeather">Checking weather...</li>
+        <li data-i18n="progressRisk">Checking risks...</li>
+        <li data-i18n="progressDebate">Comparing recommendations...</li>
+      </ol>
+    </section>
+
+    <section class="results" id="results-container" hidden aria-live="polite">
+      <div class="results-title"><p class="step-kicker" data-i18n="yourResult">YOUR FARMAGENT ADVICE</p><h2 data-i18n="resultTitle">Here is what we found</h2><p id="demo-data-note" class="data-note" hidden></p></div>
+      <article class="result-card result-found"><div class="result-icon" aria-hidden="true"></div><div><h3 data-i18n="whatFound">WHAT WE FOUND</h3><p id="what-we-found"></p></div></article>
+      <article class="result-card"><div class="result-icon" aria-hidden="true"></div><div><h3 data-i18n="whatToDo">WHAT YOU SHOULD DO</h3><ul id="what-to-do"></ul></div></article>
+      <article class="result-card caution-card"><div class="result-icon" aria-hidden="true"></div><div><h3 data-i18n="beCareful">BE CAREFUL</h3><ul id="be-careful"></ul></div></article>
+      <article class="result-card"><div class="result-icon" aria-hidden="true"></div><div><h3 data-i18n="watchFor">WATCH FOR</h3><ul id="watch-for"></ul></div></article>
+      <details class="why-details"><summary> <span data-i18n="whyTitle">Why FarmAgent thinks this</span></summary><ul id="why-list"></ul></details>
+      <div class="confidence-card" id="confidence-card"><p id="confidence-text"></p></div>
+      <details class="debate-details"><summary> <span data-i18n="debateTitle">Agent debate</span><small data-i18n="tapToExpand">Tap to see how the agents compared ideas</small></summary><div class="debate-dialogue" id="debate-dialogue"></div><div class="final-choice"><strong data-i18n="finalChoice">FarmAgent's final choice</strong><p id="final-choice"></p></div></details>
+      <div class="defend-note"><span data-i18n="defendNote">FarmAgent compared different advice and chose the safest next step.</span></div>
+    </section>
+    <p class="error-message" id="error-message" role="alert" hidden></p>
+  </main>
+  <footer class="page-footer"><span data-i18n="footer">FarmAgent helps you make a more informed choice. Ask a local farm expert for urgent or serious crop problems.</span></footer>
+  <script src="/static/app.js"></script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
